@@ -1,0 +1,60 @@
+name: CI CD Pipeline Deploy Website
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lay code ve
+        uses: actions/checkout@v4
+
+      - name: Kiem tra du 3 file (index.html, style.css, script.js)
+        run: |
+          if [ ! -f index.html ] || [ ! -f style.css ] || [ ! -f script.js ]; then
+            echo "LOI: Thieu 1 trong 3 file bat buoc!"
+            exit 1
+          fi
+          echo "Da du 3 file."
+
+      - name: Kiem tra the <title> trong file index.html
+        run: |
+          if ! grep -q -i "<title>" index.html; then
+            echo "LOI: File index.html thieu the <title>!"
+            exit 1
+          fi
+          echo "Da co the <title>."
+
+  deploy:
+    needs: check
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lay code ve
+        uses: actions/checkout@v4
+
+      - name: Cau hinh Pages
+        uses: actions/configure-pages@v5
+
+      - name: Tai tai nguyen len
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy sang GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
